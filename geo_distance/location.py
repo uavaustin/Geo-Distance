@@ -5,14 +5,11 @@ earth approximation.
 
 from math import sin, cos, atan2, pi, sqrt
 
-from dronekit import LocationGlobalRelative
-
-from distance import Distance
-from ..constants import EARTH_RADIUS, EARTH_ECCEN
-from ..util import deg_to_rad, rad_to_deg
-
 
 class Location(object):
+
+    EARTH_RADIUS = 6378137
+    EARTH_ECCEN = 0.0818191908
 
     """Represents a GPS location with a lattitude, longitude, and
     altitude with respect to the ground.
