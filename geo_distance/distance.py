@@ -19,7 +19,7 @@ class Distance(object):
         self.y = y
         self.z = z
 
-    def add(self, dist):
+    def __add__(self, dist):
         """Add two Distance objects together and return a new
         Distance.
         """
@@ -30,13 +30,16 @@ class Distance(object):
 
         return Distance(x, y, z)
 
-    def subtract(self, dist):
+    def __sub__(self, dist):
         """Subtract a Distance object and return a new Distance."""
         x = self.x - dist.x
         y = self.y - dist.y
         z = self.z - dist.z
 
         return Distance(x, y, z)
+
+    def __str__(self):
+        return ("x: %s, y: %s" % (self.x,self.y))
 
     def get_magnitude(self):
         """Return the magnitude of the Distance object from its

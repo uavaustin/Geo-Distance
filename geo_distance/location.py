@@ -29,6 +29,9 @@ class Location(object):
 
         return r_1, r_2
 
+    def __str__(self):
+        return ("Longitude: %s, Latitude: %s, Altitude: %s" % (self.lat, self.lon, self.alt))
+
     def get_distance(self, loc, angle=0):
         """Get the distance between two Locations and return a Distance
         object using the flat-earth approximation.
