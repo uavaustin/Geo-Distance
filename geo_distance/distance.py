@@ -24,10 +24,11 @@ class Distance(object):
         """
         x = self.x + dist.x
         y = self.y + dist.y
+        z = 0
         if (isinstance(self, Distance3D)):
-            z = self.z
+            z += self.z
         if (isinstance(dist, Distance3D)):
-            z = dist.z
+            z += dist.z
 
         if (isinstance(self, Distance3D) or isinstance(dist, Distance3D)):
             return Distance3D(x, y, z)
@@ -38,6 +39,15 @@ class Distance(object):
         """Subtract a Distance object and return a new Distance."""
         x = self.x - dist.x
         y = self.y - dist.y
+        z = 0
+
+        if (isinstance(self, Distance3D)):
+            z -= self.z
+        if (isinstance(dist, Distance3D)):
+            z -= dist.z
+
+        if (isinstance(self, Distance3D) or isinstance(dist, Distance3D)):
+            return Distance3D(x, y, z)
 
         return Distance(x, y)
 
