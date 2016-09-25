@@ -74,13 +74,13 @@ class Distance(object):
 
         return Distance(x, y)
 
-    @staticmethod
-    def from_magnitude(dist, bearing):
+    @classmethod
+    def from_magnitude(cls, dist, bearing):
         """Return a new Distance object from a magnitude in the xy plane
         and a bearing.
         """
-        #TODO: Since this is static, code for 3D here?
-        return Distance(dist * sin(bearing), dist * cos(bearing), 0)
+
+        return cls(dist * sin(bearing), dist * cos(bearing))
 
 class Distance3D(Distance):
 
@@ -109,14 +109,14 @@ class Distance3D(Distance):
 
         x = self.x * cos(angle) - self.y * sin(angle)
         y = self.x * sin(angle) + self.y * cos(angle)
-        z = self.z #TODO?
+        z = self.z
 
         return Distance3D(x, y, z)
 
-    @staticmethod
-    def from_magnitude(dist, bearing):
+    @classmethod
+    def from_magnitude(cls, dist, bearing, alt):
         """Return a new Distance object from a magnitude in the xy plane
         and a bearing.
         """
-        #TODO: Need to be modified for 3D?
-        return Distance3D(dist * sin(bearing), dist * cos(bearing), 0)
+
+        return cls(dist * sin(bearing), dist * cos(bearing), alt)
