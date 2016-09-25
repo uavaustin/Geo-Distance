@@ -31,7 +31,7 @@ class Location(object):
         return r_1, r_2
 
     def __str__(self):
-        return ("Longitude: %s, Latitude: %s, Altitude: %s" % (self.lat, 
+        return ("Longitude: %s, Latitude: %s, Altitude: %s" % (self.lat,
             self.lon, self.alt))
 
     def __add__(self, other):
@@ -76,3 +76,14 @@ class Location(object):
         dist = self.get_distance(loc)
 
         return atan2(dist.x, dist.y) % (2 * pi)
+
+    def haversine(self, loc):
+        dLat = radians(loc.lat - self.lat)
+        dLon = radians(loc.lon - self.lon)
+        lat1 = radians(self.lat)
+        lat2 = radians(loc.lon)
+
+        a = sin(dLat/2)**2 + cos(lat1)*cos(lat2)*sin(dLon/2)**2
+        c = 2*asin(sqrt(a))
+
+        return EARTH_RADIUS * c
