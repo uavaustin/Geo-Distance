@@ -3,8 +3,8 @@ distance object and the distance between GPS locations using a flat-
 earth approximation.
 """
 
-from math import sin, cos, atan2, pi, sqrt
-from .distance import Distance, Distance3D
+from math import sin, cos, asin, atan2, pi, sqrt
+from distance import Distance, Distance3D
 
 
 class Location(object):
@@ -31,7 +31,7 @@ class Location(object):
         return r_1, r_2
 
     def __str__(self):
-        return ("Longitude: %s, Latitude: %s, Altitude: %s" % (self.lat,
+        return ("Latitude: %s, Longitude: %s, Altitude: %s" % (self.lat,
             self.lon, self.alt))
 
     def __add__(self, other):
@@ -73,17 +73,32 @@ class Location(object):
 
     def get_bearing(self, loc):
         """Return the bearing from the Location object to loc."""
-        dist = self.get_distance(loc)
+        bearing = atan2(cos(lat2)*sin(dLon),cos(lat1)*sin(lat2)-
+            sin(lat1)*cos(lat2)*cos(dLon))
 
-        return atan2(dist.x, dist.y) % (2 * pi)
+        return bearing
 
     def haversine(self, loc):
-        dLat = radians(loc.lat - self.lat)
-        dLon = radians(loc.lon - self.lon)
-        lat1 = radians(self.lat)
-        lat2 = radians(loc.lon)
+        """Takes two location and returns distance between them."""
+        dLat = loc.lat - self.lat
+        dLon = loc.lon - self.lon
+        lat1 = self.lat
+        lat2 = loc.lat
 
-        a = sin(dLat/2)**2 + cos(lat1)*cos(lat2)*sin(dLon/2)**2
-        c = 2*asin(sqrt(a))
+        a = sin(dLat/2.0)**2 + cos(lat1)*cos(lat2)*sin(dLon/2.0)**2
+        distance = 2.0*self.EARTH_RADIUS*asin(sqrt(a))
+        bearing = atan2(cos(lat2)*sin(dLon),cos(lat1)*sin(lat2)-
+            sin(lat1)*cos(lat2)*cos(dLon))
 
-        return EARTH_RADIUS * c
+        return Distance.from_magnitude(distance,bearing)
+
+    def aHaversine(self, dist):
+        """Takes location and distnce to return new location."""
+        distance = dist.get_magnitude()
+        bearing = dist.get_bearing()
+        aDistance = distance/self.EARTH_RADIUS
+        latOut = (asin((sin(self.lat)*cos(aDistance)))+
+            cos(self.lat)*sin(aDistance)*cos(bearing))
+        lonOut = self.lon+atan2(sin(bearing)*sin(aDistance)*cos(self.lat),
+            cos(aDistance)-sin(self.lat)*sin(latOut))
+        return Location(latOut, lonOut, 0)

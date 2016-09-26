@@ -8,7 +8,7 @@ class Distance(object):
 
     """Represents a distance between two points in vector form.
 
-    Two distances can be added or subtracted and distances can be 
+    Two distances can be added or subtracted and distances can be
     transformed by an angle.
     """
 
@@ -55,7 +55,7 @@ class Distance(object):
 
     def __str__(self):
         """Print the components of a Distance object."""
-        return ('x: {0.x:d}, y: {0.y:d}'.format(self))
+        return ('x: {0.x:f}, y: {0.y:f}'.format(self))
 
     def get_magnitude(self):
         """Return the magnitude of the Distance object from its
@@ -63,6 +63,10 @@ class Distance(object):
         """
 
         return sqrt(self.x ** 2 + self.y ** 2)
+
+    def get_bearing(self):
+
+        return atan2(self.x, self.y) % (2 * pi)
 
     def get_transform(self, angle):
         """Transform the Distance object by an angle clockwise and
