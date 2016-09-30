@@ -12,15 +12,49 @@ class Location(object):
     EARTH_RADIUS = 6371008.00 #6378137
     EARTH_ECCEN = 0.0818191908
 
-    """Represents a GPS location with a lattitude, longitude, and
-    altitude with respect to the ground.
+    """Represents a GPS location with a latitude and longitude
+    with respect to the ground.
     """
 
-    def __init__(self, lat, lon, alt):
-        """Instantiate a Location object at lat, lon and at alt."""
+    def __init__(self, lat, lon):
+        """Instantiate a Location object with lat and long"""
         self.lat = lat
         self.lon = lon
-        self.alt = alt
+
+    def __str__(self):
+        """Return the components of a Location object (long/lat)"""
+        return "long: {0.long:f}, lat: {0.lat:f}".format(self)
+
+    def __add__(self, other):
+        """Adds a Distance to the current Location and returns a new Location"""
+        if not isinstance(other, Distance):
+            raise TypeError('Cannot add ', type(other), 
+                ' to a Location/AerialLocation')
+
+        invHav = aHaversine(self, other)
+        magnitude = invHav[0]
+        bearing   = invHav[1]
+        altitude  = 0
+
+        if isinstance(self, AerialLocation):
+            altitude += self.alt
+        if isinstance(other, Distance3D):
+            altitude += other.z
+
+        if isinstance(self, AerialLocation) or isinstance(other, Distance3D):
+            return Distance3D.from_magnitude(magnitude, bearing, altitude)
+
+        return Distance.from_magnitude(dist, bearing)
+
+    def __sub__(self, other):
+        if not (isinstance(other, Distance) or isinstance(other, Location)):
+            raise TypeError('Cannot subtract ', type(other),
+                ' from a Location/AerialLocation')
+
+        if isinstance(other, Distance):
+            __add__(other.reverse()) #replace with multiply
+
+
 
     def _get_earth_radii(self):
         """Return the radii used for the flat-earth approximation."""
@@ -30,17 +64,7 @@ class Location(object):
 
         return r_1, r_2
 
-    def __str__(self):
-        return ("Latitude: %s, Longitude: %s, Altitude: %s" % (self.lat,
-            self.lon, self.alt))
-
-    def __add__(self, other):
-        pass
-
-    def __sub__(self, other):
-        pass
-
-    def get_distance(self, loc, angle=0):
+    def get_distance(self, loc, angle=0): #Replaced by Location - Location
         """Get the distance between two Locations and return a Distance
         object using the flat-earth approximation.
         """
@@ -58,7 +82,7 @@ class Location(object):
 
         return dist
 
-    def get_location(self, dist):
+    def get_location(self, dist): #Replaced by Location + dist/Location - dist
         """Return a Location object dist away from the Location object
         using the flat-earth approximation.
         """
@@ -107,3 +131,17 @@ class Location(object):
             cos(aDistance)-sin(self.lat)*sin(latOut))
 
         return Location(latOut, lonOut, 0)
+
+
+class AerialLocation(Location):
+    
+    """Subclass of Location with an altitude."""
+
+    def __init__(self, lat, lon, alt):
+        """Instantiate an AerialLocation object with lat, lon, and alt."""
+        super().__init__(lat, lon)
+        self.alt  = alt
+
+    def __str__(self):
+        """Return the components of an AerialLocation object (long/lat/alt)"""
+        return "long: {0.long:f}, lat: {0.lat:f}, alt: {0.alt:f}".format(self)

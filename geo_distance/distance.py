@@ -21,16 +21,20 @@ class Distance(object):
         """Add two Distance* objects together and return a new
         Distance*.
         """
+        if not isinstance(dist, Distance):
+            raise TypeError('Cannot add ', type(dist),
+                ' to a Distance/Distance3D object.')
+
         x = self.x + dist.x
         y = self.y + dist.y
         z = 0
 
-        if (isinstance(self, Distance3D)):
+        if isinstance(self, Distance3D):
             z += self.z
-        if (isinstance(dist, Distance3D)):
+        if isinstance(dist, Distance3D):
             z += dist.z
 
-        if (isinstance(self, Distance3D) or isinstance(dist, Distance3D)):
+        if isinstance(self, Distance3D) or isinstance(dist, Distance3D):
             return Distance3D(x, y, z)
 
         return Distance(x,y)
@@ -39,23 +43,37 @@ class Distance(object):
         """Subtract a Distance* object from another Distance* object
         and return a new Distance*.
         """
+        if not isinstance(dist, Distance):
+            raise TypeError('Cannot subtract ', type(dist),
+                ' from a Distance/Distance3D object.')
+
         x = self.x - dist.x
         y = self.y - dist.y
         z = 0
 
-        if (isinstance(self, Distance3D)):
+        if isinstance(self, Distance3D):
             z += self.z
-        if (isinstance(dist, Distance3D)):
+        if isinstance(dist, Distance3D):
             z -= dist.z
 
-        if (isinstance(self, Distance3D) or isinstance(dist, Distance3D)):
+        if isinstance(self, Distance3D) or isinstance(dist, Distance3D):
             return Distance3D(x, y, z)
 
         return Distance(x, y)
 
+    def __mul__(self, scalar):
+        pass #TODO
+
+    def __div__(self, scalar):
+        pass #TODO
+
     def __str__(self):
-        """Print the components of a Distance object."""
+        """Return the components of a Distance object."""
         return ('x: {0.x:f}, y: {0.y:f}'.format(self))
+
+    def reverse(self):
+        """Reverses the Distance vector object"""
+        return Distance(-1 * self.x, -1 * self.y)
 
     def get_magnitude(self):
         """Return the magnitude of the Distance object from its
@@ -88,16 +106,20 @@ class Distance(object):
 
 class Distance3D(Distance):
 
-    """Subclass of Distance with an additional component (z)"""
+    """Subclass of Distance with an additional component (z)."""
 
     def __init__(self, x, y, z):
         """Instantiate a Distance3D object with components x, y, and z."""
-        super(Distance3D, self).__init__(x, y)
+        super().__init__(x, y)
         self.z = z
 
     def __str__(self):
-        """Print the components of a Distance3D object."""
-        return ('x: {0.x:d}, y: {0.y:d} z: {0.z:d}'.format(self))
+        """Return the components of a Distance3D object."""
+        return ('x: {0.x:f}, y: {0.y:f} z: {0.z:f}'.format(self))
+
+    def reverse(self):
+        """Reverses the Distance3D vector object"""
+        return Distance3D(-1 * self.x, -1 * self.y, -1 * self.z)
 
     def get_magnitude(self):
         """Return the magnitude of the Distance3D object from its
