@@ -6,53 +6,35 @@ earth approximation.
 from math import sin, cos, asin, atan2, pi, sqrt
 from .distance import Distance, Distance3D
 from geopy.distance import vincenty
+from pyproj import Geod
 
 class Location(object):
 
     EARTH_RADIUS = 6371008.00 #6378137
-    EARTH_ECCEN = 0.0818191908
+    EARTH_ECCEN  = 0.0818191908
+
+    FLAT_EARTH = 0
+    HAVERSINE  = 1
+    VINCNETY   = 2
+    GEOD       = 3
+
+    LOCATION_MATH_METHOD = VINCNETY
 
     """Represents a GPS location with a latitude and longitude
     with respect to the ground.
     """
 
-    def __init__(self, lat, lon):
-        """Instantiate a Location object with lat and long"""
-        self.lat = lat
-        self.lon = lon
+    def get_distance_geod(self, loc):
+        wgs84_geod = Geod(ellps='WGS84')
+        a, b, dist = wgs84_geod.inv(self.lon, self.lat, loc.lon, loc.lat,
+            radians=True)
+        return dist
 
-    def __str__(self):
-        """Return the components of a Location object (long/lat)"""
-        return "long: {0.long:f}, lat: {0.lat:f}".format(self)
-
-    def __add__(self, other):
-        """Adds a Distance to the current Location and returns a new Location"""
-        if not isinstance(other, Distance):
-            raise TypeError('Cannot add ', type(other), 
-                ' to a Location/AerialLocation')
-
-        invHav = aHaversine(self, other)
-        magnitude = invHav[0]
-        bearing   = invHav[1]
-        altitude  = 0
-
-        if isinstance(self, AerialLocation):
-            altitude += self.alt
-        if isinstance(other, Distance3D):
-            altitude += other.z
-
-        if isinstance(self, AerialLocation) or isinstance(other, Distance3D):
-            return Distance3D.from_magnitude(magnitude, bearing, altitude)
-
-        return Distance.from_magnitude(dist, bearing)
-
-    def __sub__(self, other):
-        if not (isinstance(other, Distance) or isinstance(other, Location)):
-            raise TypeError('Cannot subtract ', type(other),
-                ' from a Location/AerialLocation')
-
-        if isinstance(other, Distance):
-            __add__(other.reverse()) #replace with multiply
+    def get_location_geod(self, dist):
+        wgs84_geod   = Geod(ellps='WGS84')
+        lo, la, y, z = wgs84_geod.fwd(self.lon, self.lat, dist.get_magnitude(),
+            radians=True)
+        return (la, lo)
 
     def get_distance_old(self, loc): #Replaced by Location - Location (Vincenty)
         """Get the distance between two Locations and return a Distance
@@ -70,7 +52,7 @@ class Location(object):
         if angle:
             dist = dist.get_transform(angle)
 
-        return dist
+        return (dist.get_magnitude(), dist.get_bearing())
 
     def get_location_old(self, dist): #Replaced by Location + dist/Location
         """Return a Location object dist away from the Location object
@@ -83,9 +65,19 @@ class Location(object):
         lon = dist.x / e_radii[1] / cos(self.lat) + self.lon
         alt = self.alt + dist.z
 
-        return Location(lat, lon, alt)
+        return (lat, lon)
 
-    def get_location_vincenty(self, dist): #Replaced by Location + dist/Location - dist
+    def get_distance_vincenty(self, loc, angle=0): #Replaced by Loc - Loc
+        """Get the distance between two Locations and return a Distance
+        object using the flat-earth approximation.
+        """
+
+        point1 = (degrees(self.lat), degrees(self.lon))
+        point2 = (degrees(loc.lat), degrees(loc.lon))
+        distance = geopy.distance.vincenty(point1, point2).meters
+        return (distance, self.get_bearing(loc))
+
+    def get_location_vincenty(self, dist): #Replaced by Loc + dist/Loc - dist
         """Return a Location object dist away from the Location object
         using the flat-earth approximation.
         """
@@ -95,19 +87,9 @@ class Location(object):
             dist.get_magnitude()/1000)
         bearing = degrees(dist.get_bearing())
         out = distance.destination(point=point, bearing=bearing)
-        return Location(radians(out.latitude), radians(out.longitude),0)
+        return (radians(out.latitude), radians(out.longitude))
 
-    def get_distance_vincenty(self, loc, angle=0): #Replaced by Location - Location
-        """Get the distance between two Locations and return a Distance
-        object using the flat-earth approximation.
-        """
-
-        point1 = (degrees(self.lat), degrees(self.lon))
-        point2 = (degrees(loc.lat), degrees(loc.lon))
-        distance = geopy.distance.vincenty(point1, point2).meters
-        return Distance.from_magnitude(distance, self.get_bearing(loc))
-
-    def haversine(self, loc):
+    def haversine(self, loc): #get distance for Haversine
         """Takes two Locations and returns the Distance between them."""
         dLat = loc.lat - self.lat
         dLon = loc.lon - self.lon
@@ -119,12 +101,12 @@ class Location(object):
         bearing  = atan2(cos(lat2)*sin(dLon),cos(lat1)*sin(lat2)-
             sin(lat1)*cos(lat2)*cos(dLon))
 
-        print("Haversine Distance is {:f}".format(distance))
-        print("Haversine Bearing is  {:f}".format(bearing))
+        # print("Haversine Distance is {:f}".format(distance))
+        # print("Haversine Bearing is  {:f}".format(bearing))
 
-        return Distance.from_magnitude(distance,bearing)
+        return (distance, bearing)
 
-    def aHaversine(self, dist):
+    def aHaversine(self, dist): #get location for Haversine
         """Takes a Location and a Distance to return new location."""
         distance  = dist.get_magnitude()
         bearing   = dist.get_bearing()
@@ -135,7 +117,7 @@ class Location(object):
         lonOut = self.lon+atan2(sin(bearing)*sin(aDistance)*cos(self.lat),
             cos(aDistance)-sin(self.lat)*sin(latOut))
 
-        return Location(latOut, lonOut, 0)
+        return (latOut, lonOut)
 
     def _get_earth_radii(self):
         """Return the radii used for the flat-earth approximation."""
@@ -152,6 +134,133 @@ class Location(object):
 
         return bearing
 
+    # lmm = {
+    #         0 : self.get_location_old,
+    #         1 : self.haversine,
+    #         2 : self.get_location_vincenty,
+    #         3 : self.get_location_geod,
+
+    #         10: self.get_distance_old,
+    #         11: self.aHaversine,
+    #         12: self.get_location_vincenty,
+    #         13: self.get_location_geod
+    # }
+
+    def __init__(self, lat, lon):
+        """Instantiate a Location object with lat and long"""
+        self.lat = lat
+        self.lon = lon
+
+    def __str__(self):
+        """Return the components of a Location object (long/lat)"""
+        return "long: {0.long:f}, lat: {0.lat:f}".format(self)
+
+    def __add__(self, dist):
+        """Adds a Distance to the current Location and returns a new Location"""
+        if not isinstance(dist, Distance):
+            raise TypeError('Cannot add ', type(dist), 
+                ' to a Location/AerialLocation')
+
+        latitude, longitude = get_location(self, other)
+        altitude = 0
+
+        if isinstance(self, AerialLocation):
+            altitude += self.alt
+        if isinstance(other, Distance3D):
+            altitude += other.z
+
+        if isinstance(self, AerialLocation) or isinstance(other, Distance3D):
+            return AerialLocation(latitude, longitude, altitude)
+
+        return Location(latitude, longitude)
+
+    def __sub__(self, other):
+        """Subtracts a Distance from the current Location and returns a Location
+        OR Subtracts a Location from current Location and returns a Distance
+        """
+
+        if not (isinstance(other, Distance) or isinstance(other, Location)):
+            raise TypeError('Cannot subtract ', type(other),
+                ' from a Location/AerialLocation')
+
+        if isinstance(other, Distance):
+            return __add__(other * -1) #replace with multiply
+
+        magnitude, bearing = self.get_distance(other)
+        altitude = 0
+
+        if isinstance(self, AerialLocation):
+            altitude += self.alt
+        if isinstance(other, AerialLocation):
+            altitude -= other.alt
+
+        if isInstance(self, AerialLocation) or isinstance(other, AerialLocation):
+            return Distance3D.from_magnitude(magnitude, bearing, altitude)
+
+        return Distance.from_magnitude(magnitude, bearing)
+
+    def get_distance(self, loc):
+        """Wrapper method for get_distance; will call one of the methods for
+        obtaining a distance vector between two locations.
+
+        Called from a *Location object (AerialLocation or Location) and takes
+        a *Location object (AerialLocation or Location) and returns a Distance* 
+        (Distance3D or Distance, depending on inputs) object.
+        Here's an example:
+            >>> loc1 = Location(long, lat)
+            >>> loc2 = AerialLocation(long, lat, alt)
+            >>> loc1.get_distance(loc2)
+            (magnitude, bearing)
+        """
+
+        global lmm
+        LOCATION_MATH_METHOD = VINCNETY
+
+        lmm = {
+            0 : self.get_location_old,
+            1 : self.haversine,
+            2 : self.get_location_vincenty,
+            3 : self.get_location_geod,
+
+            10: self.get_distance_old,
+            11: self.aHaversine,
+            12: self.get_location_vincenty,
+            13: self.get_location_geod
+        }
+
+        return lmm[LOCATION_MATH_METHOD](self, loc)
+
+    def get_location(self, dist):
+        """Wrapper method for getting location; will call one of the methods
+        for obtaining a final location from an initial location and a distance
+        vector.
+
+        Called from a *Location object (AerialLocation or Location) and takes a
+        Distance* (Distance3D or Disance object) and returns a final *Location
+        (AerialLocation or Location, depending on inputs) object.
+        Here's an example:
+            >>> loc1 = AerialLocation(long, lat, alt)
+            >>> dist = Distance(x_meters, y_meters)
+            >>> loc1.get_location(dist)
+            (latitude, longitude)
+        """
+
+        global lmm
+        LOCATION_MATH_METHOD = VINCNETY
+
+        lmm = {
+            0 : self.get_location_old,
+            1 : self.haversine,
+            2 : self.get_location_vincenty,
+            3 : self.get_location_geod,
+
+            10: self.get_distance_old,
+            11: self.aHaversine,
+            12: self.get_location_vincenty,
+            13: self.get_location_geod
+        }
+
+        return lmm[LOCATION_MATH_METHOD + 10](self, dist)
 
 class AerialLocation(Location):
     

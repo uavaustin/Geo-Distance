@@ -13,7 +13,10 @@ class Distance(object):
     """
 
     def __init__(self, x, y):
-        """Instantiate a Distance object with components x and y."""
+        """Instantiate a Distance object with components x and y.
+        (in meters)
+        """
+
         self.x = x
         self.y = y
 
@@ -65,7 +68,7 @@ class Distance(object):
         x = self.x * scalar #TODO
         y = self.y * scalar
 
-        if isinstance(self, Distance)
+        if isinstance(self, Distance):
             return Distance(x, y)
 
         z = self.z * scalar
@@ -84,10 +87,6 @@ class Distance(object):
     def __str__(self):
         """Return the components of a Distance object."""
         return ('x: {0.x:f}, y: {0.y:f}'.format(self))
-
-    def reverse(self):
-        """Reverses the Distance vector object"""
-        return Distance(-1 * self.x, -1 * self.y)
 
     def get_magnitude(self):
         """Return the magnitude of the Distance object from its
@@ -130,10 +129,6 @@ class Distance3D(Distance):
     def __str__(self):
         """Return the components of a Distance3D object."""
         return ('x: {0.x:f}, y: {0.y:f} z: {0.z:f}'.format(self))
-
-    def reverse(self):
-        """Reverses the Distance3D vector object"""
-        return Distance3D(-1 * self.x, -1 * self.y, -1 * self.z)
 
     def get_magnitude(self):
         """Return the magnitude of the Distance3D object from its
