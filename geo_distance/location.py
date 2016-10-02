@@ -5,7 +5,7 @@ earth approximation.
 
 from math import sin, cos, asin, atan2, pi, sqrt
 from .distance import Distance, Distance3D
-
+from geopy.distance import vincenty
 
 class Location(object):
 
@@ -54,17 +54,7 @@ class Location(object):
         if isinstance(other, Distance):
             __add__(other.reverse()) #replace with multiply
 
-
-
-    def _get_earth_radii(self):
-        """Return the radii used for the flat-earth approximation."""
-        r_1 = (EARTH_RADIUS * (1 - EARTH_ECCEN ** 2) /
-               (1 - EARTH_ECCEN ** 2 * sin(self.lat) ** 2) ** (3 / 2))
-        r_2 = EARTH_RADIUS / sqrt(1 - EARTH_ECCEN ** 2 * sin(self.lat) ** 2)
-
-        return r_1, r_2
-
-    def get_distance(self, loc, angle=0): #Replaced by Location - Location
+    def get_distance_old(self, loc): #Replaced by Location - Location (Vincenty)
         """Get the distance between two Locations and return a Distance
         object using the flat-earth approximation.
         """
@@ -82,7 +72,7 @@ class Location(object):
 
         return dist
 
-    def get_location(self, dist): #Replaced by Location + dist/Location - dist
+    def get_location_old(self, dist): #Replaced by Location + dist/Location
         """Return a Location object dist away from the Location object
         using the flat-earth approximation.
         """
@@ -95,12 +85,27 @@ class Location(object):
 
         return Location(lat, lon, alt)
 
-    def get_bearing(self, loc):
-        """Return the bearing from the Location object to loc."""
-        bearing = atan2(cos(lat2)*sin(dLon),cos(lat1)*sin(lat2)-
-            sin(lat1)*cos(lat2)*cos(dLon))
+    def get_location_vincenty(self, dist): #Replaced by Location + dist/Location - dist
+        """Return a Location object dist away from the Location object
+        using the flat-earth approximation.
+        """
 
-        return bearing
+        point = (degrees(self.lat), degrees(self.lon))
+        distance = geopy.distance.VincentyDistance(kilometers =
+            dist.get_magnitude()/1000)
+        bearing = degrees(dist.get_bearing())
+        out = distance.destination(point=point, bearing=bearing)
+        return Location(radians(out.latitude), radians(out.longitude),0)
+
+    def get_distance_vincenty(self, loc, angle=0): #Replaced by Location - Location
+        """Get the distance between two Locations and return a Distance
+        object using the flat-earth approximation.
+        """
+
+        point1 = (degrees(self.lat), degrees(self.lon))
+        point2 = (degrees(loc.lat), degrees(loc.lon))
+        distance = geopy.distance.vincenty(point1, point2).meters
+        return Distance.from_magnitude(distance, self.get_bearing(loc))
 
     def haversine(self, loc):
         """Takes two Locations and returns the Distance between them."""
@@ -131,6 +136,21 @@ class Location(object):
             cos(aDistance)-sin(self.lat)*sin(latOut))
 
         return Location(latOut, lonOut, 0)
+
+    def _get_earth_radii(self):
+        """Return the radii used for the flat-earth approximation."""
+        r_1 = (EARTH_RADIUS * (1 - EARTH_ECCEN ** 2) /
+               (1 - EARTH_ECCEN ** 2 * sin(self.lat) ** 2) ** (3 / 2))
+        r_2 = EARTH_RADIUS / sqrt(1 - EARTH_ECCEN ** 2 * sin(self.lat) ** 2)
+
+        return r_1, r_2
+
+    def get_bearing(self, loc):
+        """Return the bearing from the Location object to loc."""
+        bearing = atan2(cos(lat2)*sin(dLon),cos(lat1)*sin(lat2)-
+            sin(lat1)*cos(lat2)*cos(dLon))
+
+        return bearing
 
 
 class AerialLocation(Location):

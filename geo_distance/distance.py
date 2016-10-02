@@ -62,10 +62,24 @@ class Distance(object):
         return Distance(x, y)
 
     def __mul__(self, scalar):
-        pass #TODO
+        x = self.x * scalar #TODO
+        y = self.y * scalar
+
+        if isinstance(self, Distance)
+            return Distance(x, y)
+
+        z = self.z * scalar
+
+        return Distance3D(x, y, z)
+
+    def __rmul__(self, scalar):
+        return __mul__(self, scalar)
 
     def __div__(self, scalar):
-        pass #TODO
+        return __mul__(self, 1.0 / scalar)
+
+    def __rdiv__(self, scalar):
+        return __div__(self, scalar)
 
     def __str__(self):
         """Return the components of a Distance object."""
