@@ -107,7 +107,7 @@ class Location(object):
 
         return lmm[LOCATION_MATH_METHOD + 10](self, dist)
 
-    def get_distance_geod(self, loc):
+    def _get_distance_geod(self, loc):
         """Takes two Location Objects and returns a magnitude and a bearing
         between the Locations using the geod library.
         """
@@ -117,7 +117,7 @@ class Location(object):
         
         return (dist, self.get_bearing(loc))
 
-    def get_location_geod(self, dist):
+    def _get_location_geod(self, dist):
         """Takes a Location and a Distance (both as objects) and returns
         latitude and longitude components of a resulting location using the 
         geod library.
@@ -128,7 +128,7 @@ class Location(object):
             degrees(dist.get_bearing()), dist.get_magnitude())
         return (radians(la), radians(lo))
 
-    def get_distance_old(self, loc):
+    def _get_distance_old(self, loc):
         """Get the distance between two Locations and return a Distance
         object using the flat-earth approximation.
         """
@@ -142,7 +142,7 @@ class Location(object):
 
         return (dist.get_magnitude(), dist.get_bearing())
 
-    def get_location_old(self, dist):
+    def _get_location_old(self, dist):
         """Return a Location object dist away from the Location object
         using the flat-earth approximation.
         """
@@ -154,7 +154,7 @@ class Location(object):
 
         return (lat, lon)
 
-    def get_distance_vincenty(self, loc, angle=0): #Replaced by Loc - Loc
+    def _get_distance_vincenty(self, loc, angle=0): #Replaced by Loc - Loc
         """Get the distance between two Locations and return a magnitude and a
         bearing using the Vincenty method from Geopy.
         """
@@ -164,7 +164,7 @@ class Location(object):
         distance = geopy.distance.vincenty(point1, point2).meters
         return (distance, self.get_bearing(loc))
 
-    def get_location_vincenty(self, dist): #Replaced by Loc + dist/Loc - dist
+    def _get_location_vincenty(self, dist): #Replaced by Loc + dist/Loc - dist
         """Return a latitude and a longitude dist away from the Location object
         using the Vincenty method from Geopy.
         """
@@ -176,7 +176,7 @@ class Location(object):
         out = distance.destination(point=point, bearing=bearing)
         return (radians(out.latitude), radians(out.longitude))
 
-    def haversine(self, loc): #get distance for Haversine
+    def _haversine(self, loc): #get distance for Haversine
         """Takes two Locations and returns the magnitude and bearing between 
         them."""
 
@@ -192,7 +192,7 @@ class Location(object):
 
         return (distance, bearing)
 
-    def aHaversine(self, dist): #get location for Haversine
+    def _aHaversine(self, dist): #get location for Haversine
         """Takes a Location and a Distance to return a new long/lat."""
         distance  = dist.get_magnitude()
         bearing   = dist.get_bearing()
@@ -250,13 +250,13 @@ GEOD       = 3
 LOCATION_MATH_METHOD = FLAT_EARTH
 
 lmm={
-        (FLAT_EARTH + 0): Location.get_distance_old,
-        (HAVERSINE  + 0): Location.haversine,
-        (VINCENTY   + 0): Location.get_distance_vincenty,
-        (GEOD       + 0): Location.get_distance_geod,
+        (FLAT_EARTH + 0): Location._get_distance_old,
+        (HAVERSINE  + 0): Location._haversine,
+        (VINCENTY   + 0): Location._get_distance_vincenty,
+        (GEOD       + 0): Location._get_distance_geod,
 
-        (FLAT_EARTH + 10): Location.get_location_old,
-        (HAVERSINE  + 10): Location.aHaversine,
-        (VINCENTY   + 10): Location.get_location_vincenty,
-        (GEOD       + 10): Location.get_location_geod
+        (FLAT_EARTH + 10): Location._get_location_old,
+        (HAVERSINE  + 10): Location._aHaversine,
+        (VINCENTY   + 10): Location._get_location_vincenty,
+        (GEOD       + 10): Location._get_location_geod
     }
