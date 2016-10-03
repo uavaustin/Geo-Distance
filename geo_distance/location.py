@@ -10,9 +10,6 @@ import geopy.distance
 
 class Location(object):
 
-    EARTH_RADIUS = 6371008.00 #6378137
-    EARTH_ECCEN  = 0.0818191908
-
     """Represents a GPS location with a latitude and longitude
     with respect to the ground.
     """
@@ -140,12 +137,8 @@ class Location(object):
 
         x = e_radii[1] * cos(self.lat) * (loc.lon - self.lon)
         y = e_radii[0] * (loc.lat - self.lat)
-        z = loc.alt - self.alt
 
-        dist = Distance(x, y, z)
-
-        if angle:
-            dist = dist.get_transform(angle)
+        dist = Distance(x, y)
 
         return (dist.get_magnitude(), dist.get_bearing())
 
@@ -158,13 +151,12 @@ class Location(object):
 
         lat = dist.y / e_radii[0] + self.lat
         lon = dist.x / e_radii[1] / cos(self.lat) + self.lon
-        alt = self.alt + dist.z
 
         return (lat, lon)
 
     def get_distance_vincenty(self, loc, angle=0): #Replaced by Loc - Loc
-        """Get the distance between two Locations and return a Distance
-        object using the flat-earth approximation.
+        """Get the distance between two Locations and return a magnitude and a
+        bearing using the Vincenty method from Geopy.
         """
 
         point1 = (degrees(self.lat), degrees(self.lon))
@@ -173,8 +165,8 @@ class Location(object):
         return (distance, self.get_bearing(loc))
 
     def get_location_vincenty(self, dist): #Replaced by Loc + dist/Loc - dist
-        """Return a Location object dist away from the Location object
-        using the flat-earth approximation.
+        """Return a latitude and a longitude dist away from the Location object
+        using the Vincenty method from Geopy.
         """
 
         point = (degrees(self.lat), degrees(self.lon))
@@ -185,7 +177,9 @@ class Location(object):
         return (radians(out.latitude), radians(out.longitude))
 
     def haversine(self, loc): #get distance for Haversine
-        """Takes two Locations and returns the Distance between them."""
+        """Takes two Locations and returns the magnitude and bearing between 
+        them."""
+
         dLat = loc.lat - self.lat
         dLon = loc.lon - self.lon
         lat1 = self.lat
@@ -196,13 +190,10 @@ class Location(object):
         bearing  = atan2(cos(lat2)*sin(dLon),cos(lat1)*sin(lat2)-
             sin(lat1)*cos(lat2)*cos(dLon))
 
-        # print("Haversine Distance is {:f}".format(distance))
-        # print("Haversine Bearing is  {:f}".format(bearing))
-
         return (distance, bearing)
 
     def aHaversine(self, dist): #get location for Haversine
-        """Takes a Location and a Distance to return new location."""
+        """Takes a Location and a Distance to return a new long/lat."""
         distance  = dist.get_magnitude()
         bearing   = dist.get_bearing()
         aDistance = distance/self.EARTH_RADIUS
@@ -247,21 +238,25 @@ class AerialLocation(Location):
         """Return the components of an AerialLocation object (long/lat/alt)"""
         return "long: {0.lon:f}, lat: {0.lat:f}, alt: {0.alt:f}".format(self)
 
+
+EARTH_RADIUS = 6371008.00 #6378137
+EARTH_ECCEN  = 0.0818191908
+
 FLAT_EARTH = 0
 HAVERSINE  = 1
 VINCENTY   = 2
 GEOD       = 3
 
-LOCATION_MATH_METHOD = HAVERSINE
+LOCATION_MATH_METHOD = FLAT_EARTH
 
 lmm={
         (FLAT_EARTH + 0): Location.get_distance_old,
-        (HAVERSINE  + 0): Location.aHaversine,
+        (HAVERSINE  + 0): Location.haversine,
         (VINCENTY   + 0): Location.get_distance_vincenty,
         (GEOD       + 0): Location.get_distance_geod,
 
         (FLAT_EARTH + 10): Location.get_location_old,
-        (HAVERSINE  + 10): Location.haversine,
+        (HAVERSINE  + 10): Location.aHaversine,
         (VINCENTY   + 10): Location.get_location_vincenty,
         (GEOD       + 10): Location.get_location_geod
     }
