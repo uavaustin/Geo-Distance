@@ -111,18 +111,27 @@ class Location(object):
         return lmm[LOCATION_MATH_METHOD + 10](self, dist)
 
     def get_distance_geod(self, loc):
-        wgs84_geod = Geod(ellps='WGS84')
-        a, b, dist = wgs84_geod.inv(self.lon, self.lat, loc.lon, loc.lat,
-            radians=True)
-        return dist
+        """Takes two Location Objects and returns a magnitude and a bearing
+        between the Locations using the geod library.
+        """
+
+        g = Geod(ellps='sphere')
+        dist = g.inv(self.lon, self.lat, loc.lon, loc.lat, radians=True)[2]
+        
+        return (dist, self.get_bearing(loc))
 
     def get_location_geod(self, dist):
-        wgs84_geod   = Geod(ellps='WGS84')
-        lo, la, y, z = wgs84_geod.fwd(self.lon, self.lat, dist.get_magnitude(),
-            radians=True)
-        return (la, lo)
+        """Takes a Location and a Distance (both as objects) and returns
+        latitude and longitude components of a resulting location using the 
+        geod library.
+        """
+        
+        g = Geod(ellps='sphere')
+        lo, la, z = g.fwd(degrees(self.lon), degrees(self.lat), 
+            degrees(dist.get_bearing()), dist.get_magnitude())
+        return (radians(la), radians(lo))
 
-    def get_distance_old(self, loc): #Replaced by Location - Location (Vincenty)
+    def get_distance_old(self, loc):
         """Get the distance between two Locations and return a Distance
         object using the flat-earth approximation.
         """
@@ -140,7 +149,7 @@ class Location(object):
 
         return (dist.get_magnitude(), dist.get_bearing())
 
-    def get_location_old(self, dist): #Replaced by Location + dist/Location
+    def get_location_old(self, dist):
         """Return a Location object dist away from the Location object
         using the flat-earth approximation.
         """
@@ -243,7 +252,7 @@ HAVERSINE  = 1
 VINCENTY   = 2
 GEOD       = 3
 
-LOCATION_MATH_METHOD = VINCENTY
+LOCATION_MATH_METHOD = HAVERSINE
 
 lmm={
         (FLAT_EARTH + 0): Location.get_distance_old,
