@@ -8,7 +8,7 @@ from .distance import Distance, Distance3D
 from pyproj import Geod
 import geopy.distance
 
-class Location(object):
+class Location:
 
     """Represents a GPS location with a latitude and longitude
     with respect to the ground.
@@ -26,7 +26,7 @@ class Location(object):
     def __add__(self, dist):
         """Adds a Distance to the current Location and returns a new Location"""
         if not isinstance(dist, Distance):
-            raise TypeError('Cannot add ', type(dist), 
+            raise TypeError('Cannot add ', type(dist),
                 ' to a Location/AerialLocation')
 
         latitude, longitude = self.get_location(dist)
@@ -62,7 +62,7 @@ class Location(object):
         if isinstance(other, AerialLocation):
             altitude -= other.alt
 
-        if (isinstance(self, AerialLocation) or 
+        if (isinstance(self, AerialLocation) or
                 isinstance(other, AerialLocation)):
             return Distance3D.from_magnitude(magnitude, bearing, altitude)
 
@@ -73,7 +73,7 @@ class Location(object):
         obtaining a distance vector between two locations.
 
         Called from a *Location object (AerialLocation or Location) and takes
-        a *Location object (AerialLocation or Location) and returns a Distance* 
+        a *Location object (AerialLocation or Location) and returns a Distance*
         (Distance3D or Distance, depending on inputs) object.
         Here's an example:
             >>> loc1 = Location(long, lat)
@@ -114,17 +114,17 @@ class Location(object):
 
         g = Geod(ellps='sphere')
         dist = g.inv(self.lon, self.lat, loc.lon, loc.lat, radians=True)[2]
-        
+
         return (dist, self.get_bearing(loc))
 
     def _get_location_geod(self, dist):
         """Takes a Location and a Distance (both as objects) and returns
-        latitude and longitude components of a resulting location using the 
+        latitude and longitude components of a resulting location using the
         geod library.
         """
-        
+
         g = Geod(ellps='sphere')
-        lo, la, z = g.fwd(degrees(self.lon), degrees(self.lat), 
+        lo, la, z = g.fwd(degrees(self.lon), degrees(self.lat),
             degrees(dist.get_bearing()), dist.get_magnitude())
         return (radians(la), radians(lo))
 
@@ -177,7 +177,7 @@ class Location(object):
         return (radians(out.latitude), radians(out.longitude))
 
     def _haversine(self, loc): #get distance for Haversine
-        """Takes two Locations and returns the magnitude and bearing between 
+        """Takes two Locations and returns the magnitude and bearing between
         them."""
 
         dLat = loc.lat - self.lat
@@ -226,7 +226,7 @@ class Location(object):
 
 
 class AerialLocation(Location):
-    
+
     """Subclass of Location with an altitude."""
 
     def __init__(self, lat, lon, alt):

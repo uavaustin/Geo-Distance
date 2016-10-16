@@ -101,7 +101,6 @@ class Distance:
         """Return a new Distance object from a magnitude in the xy plane
         and a bearing.
         """
-
         return cls(dist * sin(bearing), dist * cos(bearing))
 
     def __str__(self):
@@ -121,6 +120,7 @@ class Distance3D(Distance):
         """Instantiate a Distance3D object with components x, y, and
         z."""
         super().__init__(x, y)
+        
         self.z = z
 
     def get_magnitude(self):
