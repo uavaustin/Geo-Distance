@@ -247,7 +247,7 @@ HAVERSINE  = 1
 VINCENTY   = 2
 GEOD       = 3
 
-LOCATION_MATH_METHOD = GEOD
+LOCATION_MATH_METHOD = FLAT_EARTH
 
 lmm={
         (FLAT_EARTH + 0): Location._get_distance_old,
